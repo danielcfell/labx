@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      context: ./core
+    container_name: labx_api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://labx:labx@postgres:5432/labx
+      APP_ENV: local
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./core:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: labx_postgres
+    environment:
+      POSTGRES_USER: labx
+      POSTGRES_PASSWORD: labx
+      POSTGRES_DB: labx
+    ports:
+      - "5432:5432"
+    volumes:
+      - labx_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U labx -d labx"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  labx_pgdata:
